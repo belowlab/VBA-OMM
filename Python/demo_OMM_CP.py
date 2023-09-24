@@ -7,11 +7,13 @@ df = pd.read_csv("Data1.csv")
 t = df["Time [min]"].to_numpy()
 G = df["Glucose [mmol/L]"].to_numpy()
 CP = df["C-Peptide [nmol/L]"].to_numpy()
+GLP1 = df["GLP1"].to_numpy()
 
 # Construt the data struture
 dat = {"t": t.reshape(len(t),1),
        "G": G.reshape(len(t),1),
-       "CP": CP.reshape(len(t),1)}
+       "CP": CP.reshape(len(t),1),
+       "GLP1": GLP1.reshape(len(t), 1)}
 
 # Constants
 const = {"dt": 0.1,
@@ -25,10 +27,13 @@ const = {"dt": 0.1,
 opt = {"displayWin": True,
        "updateMeasCV": False}
 
-# Priors [median CV]
-priors = {"T": np.array([10, 50]),                 # min 
+# Priors [median, CV]
+priors = {
+          "T": np.array([10, 50]),                 # min 
           "beta": np.array([20, 50]),              # 1E-9 1/min
           "h": np.array([dat["G"][0,0], 20]),      # mmol/l
-          "kd": np.array([1000, 50])}              # 1E-9
+          "kd": np.array([1000, 50]),              # 1E-9
+          "pi": np.array([5, 50])                  # % per pmol/L
+          }              
 
 out = VBA_OMM.mainCP(dat, priors, const, opt)

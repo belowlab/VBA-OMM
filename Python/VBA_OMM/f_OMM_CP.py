@@ -8,12 +8,13 @@ def f_model(X, th, u, inF):
     k12 = inF["k12"]
     k21 = inF["k21"]
 
-    n_theta = 4
+    n_theta = 5
     n = 3
 
-    t = u[0, 0]
-    G = u[1, 0]
-    dG = u[2, 0]
+    t = u[0, 0] # time
+    G = u[1, 0] # glucose
+    dG = u[2, 0] # change in glucose
+    GLP1 = u[3, 0] # GLP1
 
     SR = f_SR(X,th,dG)[0]
 
@@ -22,6 +23,7 @@ def f_model(X, th, u, inF):
     dx[0, 0] = -(k01+k21)*X[0] + k12*X[1] + SR
     dx[1, 0] = k21*X[0] - k12*X[1]
     dx[2, 0] = -np.exp(-th[0]) * (X[2] - np.exp(th[1])*1e-3 * (G - np.exp(th[2])))
+    dx[3, 0] = SR * (th[4] * GLP1 + 1) # th[4] is Pi, new term we're solving for
 
     # Derivatives of the ODEs w.r.t
         # Model states
@@ -41,14 +43,22 @@ def f_model(X, th, u, inF):
     dFdTh[0, 1] = 0
     dFdTh[0, 2] = 0
     dFdTh[0, 3] = get_dTh_3_4(th,dG)
+    dFdTh[0, 4] = 0
     dFdTh[1, 0] = 0
     dFdTh[1, 1] = 0
     dFdTh[1, 2] = 0
     dFdTh[1, 3] = 0
+    dFdTh[1, 4] = 0
     dFdTh[2, 0] = np.exp(-th[0]) * (X[2] - np.exp(th[1])*1e-3 * (G - np.exp(th[2])))
     dFdTh[2, 1] = np.exp(-th[0]) * np.exp(th[1])*1e-3 * (G - np.exp(th[2]))
     dFdTh[2, 2] = -np.exp(-th[0]) * np.exp(th[1])*1e-3 * np.exp(th[2])
     dFdTh[2, 3] = 0
+    dFdTh[2, 4] = 0
+    dFdTh[3, 0] = 0
+    dFdTh[3, 1] = 0
+    dFdTh[3, 2] = 0 # Deriving with respect to glucose, maybe wrong
+    dFdTh[3, 3] = 0
+    dFdTh[3, 4] = SR * (GLP1 + 1)
     
     return dx, dFdX, dFdTh
 
@@ -88,6 +98,16 @@ def f_SR(X,th,dG):
     SR = SRs + SRd
 
     return SR, SRs, SRd
+
+def f_SR_GLP(GLP1: float, SR: float, Pi: float):
+    """
+    Calculates the secretion rate of GLP-1 based on
+    the secretion rate of C-peptide, current GLP1 concentration
+    and GLP1-sensitvity index (Pi)
+    """
+
+    return SR * (Pi * GLP1 + 1)
+    
 
 def get_dTh_3_4(th,dG):
 

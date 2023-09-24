@@ -13,6 +13,7 @@ def main(dat, priors, const, opt):
         t = np.reshape(dat["t"], (1, np.size(dat["t"])))
         G = np.reshape(dat["G"], (1, np.size(dat["G"])))
         CP = np.reshape(dat["CP"], (1, np.size(dat["CP"])))
+        GLP1 = np.reshape(dat["GLP1"], (1, np.size(dat["GLP1"])))
     except:
         print("ERROR: Dat structure is flawed")
         return []
@@ -41,6 +42,7 @@ def main(dat, priors, const, opt):
         p_beta = priors["beta"]
         p_h = priors["h"]
         p_kd = priors["kd"]
+        p_pi = priors["pi"]
     except:
         print('ERROR: Priors are flawed')
         return []
@@ -79,17 +81,19 @@ def main(dat, priors, const, opt):
 
     # Construct Priors
         # - Parameters
-    muTheta = np.zeros((4,1))
+    muTheta = np.zeros((5,1))
     muTheta[0, 0] = np.log(p_T[0])
     muTheta[1, 0] = np.log(p_beta[0])
     muTheta[2, 0] = np.log(p_h[0])
     muTheta[3, 0] = np.log(p_kd[0])
+    muTheta[4, 0] = np.log(p_pi[0])
 
-    SigmaTheta = np.zeros((4,4))
+    SigmaTheta = np.zeros((5,5))
     SigmaTheta[0, 0] = np.log((p_T[1] / 100) ** 2 + 1)
     SigmaTheta[1, 1] = np.log((p_beta[1] / 100) ** 2 + 1)
     SigmaTheta[2, 2] = np.log((p_h[1] / 100) ** 2 + 1)
     SigmaTheta[3, 3] = np.log((p_kd[1] / 100) ** 2 + 1)
+    SigmaTheta[4, 4] = np.log((p_pi[1] / 100) ** 2 + 1)
 
         # - Initial Conditions
     muX0 = np.zeros((3, 1))
