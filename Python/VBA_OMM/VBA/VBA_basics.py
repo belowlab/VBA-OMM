@@ -90,6 +90,7 @@ def Runge_Kutta(f_model, i, xn, Sthn, Sx0n, u, th, options, dt):
     un2 = u[:, [i+1]]
 
     # Model States
+    # k5 for the new term
     k1 = f_model(xn, th, un, options["inF"])[0]
     k2 = f_model(xn + dt*k1/2, th, (un + un2)/2, options["inF"])[0]
     k3 = f_model(xn + dt*k2/2, th, (un + un2)/2, options["inF"])[0]
@@ -109,6 +110,7 @@ def Runge_Kutta(f_model, i, xn, Sthn, Sx0n, u, th, options, dt):
     Sthn2 = Sthn + dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
 
         # Initial Conditions
+        # Do we need a k5 now?
     k1 = dFdX @ Sx0n
     k2 = dFdX @ (Sx0n + dt * k1 / 2)
     k3 = dFdX @ (Sx0n + dt * k2 / 2)

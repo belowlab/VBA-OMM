@@ -14,11 +14,8 @@ def Initialize(data, t, priors, options):
     posterior = priors.copy()
 
     # Get initial estimates with priors
-    try:
-        y, muX, SigmaX, dXdTh, dXdX0, dYdPhi, dYdTh, dYdX0, dG_dP = base.solveODE(t, priors["muP"], priors["SigmaP"],
-                                                                                data["u"], options)
-    except:
-        raise Exception("The model produces error (see above)")
+    y, muX, SigmaX, dXdTh, dXdX0, dYdPhi, dYdTh, dYdX0, dG_dP = base.solveODE(t, priors["muP"], priors["SigmaP"],
+                                                                            data["u"], options)
 
 
     if base.isWeird(y):
@@ -323,11 +320,8 @@ def check_model(options, priors, data):
     f_model = options["f_model"]
     f_obs = options["f_obs"]
 
-    try:
-        dx, J, H = f_model(x0, th, u[:, [0]], options["inF"])
-        y, dY_dX, dY_dPhi = f_obs(dx, phi, u[:, [0]], options["inG"])
-    except:
-        raise Exception("The model produces error (see above)")
+    dx, J, H = f_model(x0, th, u[:, [0]], options["inF"])
+    y, dY_dX, dY_dPhi = f_obs(dx, phi, u[:, [0]], options["inG"])
 
     if np.shape(dx)[0] != dim["n"] or np.shape(dx)[1] != 1:
         raise Exception("Model Error: Dimensions of x must be n by 1")

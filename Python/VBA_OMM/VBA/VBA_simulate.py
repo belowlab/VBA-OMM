@@ -14,10 +14,7 @@ def simulate(td, t, u, priors, options, plot_bool):
     options, priors = check_model(options.copy(), priors.copy(), data)
 
     # Get initial estimates with priors
-    try:
-        y, muX, SigmaX = VBA_basics.solveODE(t, priors["muP"], priors["SigmaP"], data["u"], options)[0:3]
-    except:
-        raise Exception("The model produces error (see above)")
+    y, muX, SigmaX = VBA_basics.solveODE(t, priors["muP"], priors["SigmaP"], data["u"], options)[0:3]
 
     if VBA_basics.isWeird(y):
         raise Exception("Could not simulate model: model generates NaN or Inf!'")
@@ -100,11 +97,8 @@ def check_model(options, priors, data):
     f_model = options["f_model"]
     f_obs = options["f_obs"]
 
-    try:
-        x, J, H = f_model(x0, th, u[:, [0]], options["inF"])
-        y, dY_dX, dY_dPhi = f_obs(x, phi, u[:, [0]], options["inG"])
-    except:
-        raise Exception("The model produces error (see above)")
+    x, J, H = f_model(x0, th, u[:, [0]], options["inF"])
+    y, dY_dX, dY_dPhi = f_obs(x, phi, u[:, [0]], options["inG"])
 
     if np.shape(x)[0] != dim["n"] or np.shape(x)[1] != 1:
         raise Exception("Model Error: Dimensions of x must be n by 1")

@@ -4,6 +4,8 @@ from . import f_OMM_CP as f_CP
 from . import logistic_mapping as LogMap
 import matplotlib.pyplot as plt
 
+import traceback
+
 def main(dat, priors, const, opt):
 
     # ----------------------------------------------
@@ -61,13 +63,17 @@ def main(dat, priors, const, opt):
     ti = ti.reshape(1, ti.size)
 
     # Input
-    u = np.zeros((3, np.shape(ti)[1]))
+    u = np.zeros((4, np.shape(ti)[1]))
     u[0, :] = ti
     Gi = np.interp(np.reshape(ti, np.shape(ti)[1]),
                    np.reshape(t, np.shape(t)[1]),
                    np.reshape(G, np.shape(G)[1]))
     u[1, :] = np.reshape(Gi, (1, np.shape(Gi)[0]))
     u[2, :] = np.diff(Gi,append=Gi[-1]) / dt
+    GLP1i = np.interp(np.reshape(ti, np.shape(ti)[1]),
+                   np.reshape(t, np.shape(t)[1]),
+                   np.reshape(GLP1, np.shape(GLP1)[1]))
+    u[3, :] = np.reshape(GLP1i, (1, np.shape(GLP1i)[0]))
 
     data = {"y": CP[:, 0:np.size(CP)] - CPb,
             "t": t[:, 0:np.size(CP)],
@@ -96,12 +102,13 @@ def main(dat, priors, const, opt):
     SigmaTheta[4, 4] = np.log((p_pi[1] / 100) ** 2 + 1)
 
         # - Initial Conditions
-    muX0 = np.zeros((3, 1))
+    muX0 = np.zeros((4, 1))
     muX0[0, 0] = 0
     muX0[1, 0] = 0
     muX0[2, 0] = 0
+    muX0[3, 0] = 0
 
-    SigmaX0 = np.zeros((3, 3))
+    SigmaX0 = np.zeros((4, 4))
 
         # - Measurement Noise
     CPi = np.interp(np.reshape(ti, np.shape(ti)[1]),
@@ -123,7 +130,7 @@ def main(dat, priors, const, opt):
           "iQy": iQy}
 
     # Model Dimensions
-    dim = {"n": 3,
+    dim = {"n": 4,
            "n_theta": np.size(pr["muTheta"]),
            "n_phi": 0}
 
@@ -147,8 +154,9 @@ def main(dat, priors, const, opt):
 
     try:
         post, out_TB = VBA.VBA_Main.main(data, ti, pr, options)
-    except:
-        print("Inverison Failed")
+    except Exception:
+        print("Inversion Failed")
+        traceback.print_exc()
         return []
 
     if displayWin:
@@ -169,6 +177,7 @@ def main(dat, priors, const, opt):
                  "beta": np.array([np.exp(post["muTheta"][1, 0]), np.sqrt(np.exp(post["SigmaTheta"][1, 1]) - 1) * 100]),
                  "h": np.array([np.exp(post["muTheta"][2, 0]), np.sqrt(np.exp(post["SigmaTheta"][2, 2]) - 1) * 100]),
                  "kd": np.array([np.exp(post["muTheta"][3, 0]), np.sqrt(np.exp(post["SigmaTheta"][3, 3]) - 1) * 100]),
+                 "pi": np.array([np.exp(post["muTheta"][4, 0]), np.sqrt(np.exp(post["SigmaTheta"][4, 4]) - 1) * 100]),
                  "measCV": np.array([mu/np.mean(CPi)*100,sig/mu*100])}
 
     out.update({"posterior": posterior})
@@ -186,6 +195,7 @@ def main(dat, priors, const, opt):
                     "SRd": SRd,                    
                     "PhiS": posterior["beta"][0],
                     "PhiD": posterior["kd"][0],
+                    "Pi": posterior["pi"][0],
                     "PhiB": k01*CPb/Gb*1e3,
                     "Phi": posterior["beta"][0] + posterior["kd"][0]*(np.max(G) - Gb)/(np.trapz(Gi,ti)*dt)}
     out.update({"Model_Output": Model_Output})
@@ -218,11 +228,12 @@ def get_ModelOut(post, out_TB, t):
     X = out_TB["ModelOut"]["muX"]
     n = len(out_TB["ModelOut"]["SigmaX"])
     
-    SigX = np.zeros((3, n))
+    SigX = np.zeros((4, n))
     for i in range(0, n):
         SigX[0, i] = np.sqrt(out_TB["ModelOut"]["SigmaX"][i][0, 0])
         SigX[1, i] = np.sqrt(out_TB["ModelOut"]["SigmaX"][i][1, 1])
         SigX[2, i] = np.sqrt(out_TB["ModelOut"]["SigmaX"][i][2, 2])
+        SigX[3, i] = np.sqrt(out_TB["ModelOut"]["SigmaX"][i][3, 3])
 
     # SR
     u = out_TB["data"]["u"]
@@ -266,6 +277,8 @@ def create_ResultsFigure(out):
     strgs.append("       "+str(np.round(mo["PhiB"],1)))
     strgs.append(r"   - Total $\beta$-cell Senst.$\Phi$ [$10^{-9}$min$^{-1}$]:")
     strgs.append("       "+str(np.round(float(mo["Phi"]), 1)))
+    strgs.append(r"   - Pi:")
+    strgs.append("       "+str(np.round(mo["Pi"],4)))
 
 
     for i in range(0, len(strgs)):
@@ -284,7 +297,7 @@ def create_ResultsFigure(out):
     h4 = ax[0, 1].fill_between(To1D(mo["t"]), To1D(mo["CP1"] - mo["SigCP1"]), To1D(mo["CP1"] + mo["SigCP1"]), alpha=0.2, color="tab:blue")
     ax[0,1].legend(handles=[h1[0],(h3[0],h4)],labels=["Data",r"Model Pred. $\pm1\sigma$"])
 
-    # Secreation Rate
+    # Secretion Rate
     ax[1, 0].set_title('Secretion rate')
     ax[1, 0].set_ylabel("SR [nmol/l/min]")
     ax[1, 0].set_xlabel("Time [min]")

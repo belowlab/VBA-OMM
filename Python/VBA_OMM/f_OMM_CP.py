@@ -9,7 +9,7 @@ def f_model(X, th, u, inF):
     k21 = inF["k21"]
 
     n_theta = 5
-    n = 3
+    n = 4
 
     t = u[0, 0] # time
     G = u[1, 0] # glucose
@@ -68,7 +68,7 @@ def f_obs(X, phi, u, inG):
 
     n_phi = 0       # No of Observation Parameters
     nY = 1          # No of Observations
-    n = 3           # Model order
+    n = 4           # Model order
 
     # Observation Equation
     gx = np.zeros((nY, 1))
@@ -80,6 +80,7 @@ def f_obs(X, phi, u, inG):
     dGdX[0, 0] = 1
     dGdX[0, 1] = 0
     dGdX[0, 2] = 0
+    dGdX[0, 3] = 0
         # - Observation Parameters
     dGdPhi = np.zeros((nY, n_phi))
 
